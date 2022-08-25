@@ -113,7 +113,7 @@
     home = "/home/beethoven";
     packages = with pkgs; [
       vivaldi
-      firefox
+      chromium
       discord
       spotify
       nitrogen
@@ -121,11 +121,10 @@
       dolphin
       lxappearance
       numix-icon-theme
-
-      xonotic-sdl
+      capitaine-cursors
+      adwaita-qt
 
       nodePackages.npm
-      nodePackages.yarn
       nodePackages.typescript-language-server
     ];
   };
@@ -138,11 +137,16 @@
 
     environment.systemPackages = with pkgs; [
     xorg.xbacklight
+
     alacritty
     vim
     emacs
+
     btop
     wget
+    acpi
+    gzip
+    pamixer
   ];
 
   # Some programs need SUID wrappers, can be configured further or are
@@ -157,8 +161,8 @@
 
   # Enable the OpenSSH daemon.
   services.openssh = {
-    enable = true;
-    ports = [ 6566 ];
+     enable = true;
+     ports = [ 6566 ];
   };
 
   # Open ports in the firewall.
