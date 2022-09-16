@@ -6,6 +6,14 @@
 
 { config, pkgs, ... }:
 
+# Listing current channels                                                      nix-channel --list
+# Adding a primary channel                                                      nix-channel --add https://nixos.org/channels/channel-name nixos
+# Adding other channels                                                         nix-channel --add https://some.channel/url my-alias
+# Remove a channel                                                              nix-channel --remove channel-alias
+# Updating a channel                                                            nix-channel --update channel-alias
+# Updating all channels                                                         nix-channel --update
+# Rollback the last update (useful if the last update breaks the nixos-rebuild) nix-channel --rollback
+
 {
   imports =
     [ # Include the results of the hardware scan.
@@ -13,7 +21,7 @@
     ];
 
   # Enable docker
-  #virtualisation.docker.enable = true;
+  virtualisation.docker.enable = true;
 
   # Enable flatpak
   services.flatpak.enable = true;
@@ -29,6 +37,10 @@
   #services.emacs.enable = true;
   #services.emacs.package = import /home/beethoven/.emacs.d { pkgs = pkgs; };
 
+  # Enable bluetooth
+  hardware.bluetooth.enable = true;
+  services.blueman.enable = true;
+
   # Bootloader.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
@@ -37,12 +49,12 @@
   networking.hostName = "nixos"; # Define your hostname.
   #networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
 
+  # Enable networking
+  networking.networkmanager.enable = true;
+
   # Configure network proxy if necessary
   # networking.proxy.default = "http://user:password@proxy:port/";
   # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
-
-  # Enable networking
-  networking.networkmanager.enable = true;
 
   # Set your time zone.
   time.timeZone = "Asia/Vladivostok";
@@ -62,12 +74,14 @@
     LC_TIME = "ru_RU.utf8";
   };
 
+  nix.settings.experimental-features = "nix-command flakes";
+
   # Enable the X11 windowing system.
   services.xserver.enable = true;
 
   # Setting the Desktop Environment.
   services.xserver.displayManager.sddm.enable = true;
-  #services.xserver.desktopManager.plasma5.enable = true;
+  services.xserver.desktopManager.plasma5.enable = true;
   services.xserver.windowManager.awesome = {
     enable = true;
     luaModules = with pkgs.luaPackages; [
@@ -86,7 +100,7 @@
   #services.printing.enable = true;
 
   # Enable sound with pipewire.
-  sound.enable = true;
+  # sound.enable = true;
   hardware.pulseaudio.enable = false;
   security.rtkit.enable = true;
   services.pipewire = {
@@ -109,20 +123,25 @@
   users.users.beethoven = {
     isNormalUser = true;
     description = "beethoven";
-    extraGroups = [ "networkmanager" "wheel" ];
+    extraGroups = [ "networkmanager" "wheel" "docker"];
     home = "/home/beethoven";
     packages = with pkgs; [
       vivaldi
-      chromium
+      #chromium
+      ungoogled-chromium
+
       discord
       spotify
       nitrogen
+
+      starship
 
       dolphin
       lxappearance
       numix-icon-theme
       capitaine-cursors
       adwaita-qt
+      pkgs.gnome.file-roller
 
       nodePackages.npm
       nodePackages.typescript-language-server
@@ -135,19 +154,42 @@
   # List packages installed in system profile. To search, run:
   # $ nix search wget
 
-    environment.systemPackages = with pkgs; [
+  environment.systemPackages = with pkgs; [
     xorg.xbacklight
 
+    rustfmt
+    cargo
+    go
+
     alacritty
+    unzip
+    fish
+
+    micro
     vim
     emacs
 
-    btop
+    btop   # Cross-platform system monitors
+    bottom #
+
     wget
     acpi
     gzip
     pamixer
+
+    noto-fonts
+    noto-fonts-cjk
+    noto-fonts-emoji
+    fira-code
+    fira-code-symbols
   ];
+
+
+  services.postgresql = {
+     enable = true;
+     package = pkgs.postgresql_14;
+     #dataDir = "/share/postgresql";
+  };
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
@@ -161,8 +203,8 @@
 
   # Enable the OpenSSH daemon.
   services.openssh = {
-     enable = true;
-     ports = [ 6566 ];
+    enable = true;
+    ports = [ 6566 ];
   };
 
   # Open ports in the firewall.
