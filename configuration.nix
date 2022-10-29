@@ -25,21 +25,30 @@
 
   # Enable flatpak
   services.flatpak.enable = true;
-  xdg.portal.enable = true;
-  xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
+  #xdg.portal.enable = true;
+  #xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
 
   # Enable virtualbox (virtualisation)
   virtualisation.virtualbox.host.enable = true;
   virtualisation.virtualbox.host.enableExtensionPack = true;
-  users.extraGroups.vboxusers.members = [ "beethoven" ];
 
   # Enable Emacs as daemon
-  #services.emacs.enable = true;
-  #services.emacs.package = import /home/beethoven/.emacs.d { pkgs = pkgs; };
+  # services.emacs.enable = true;
+
+  nixpkgs.overlays = [
+    (import (builtins.fetchTarball {
+      url = https://github.com/nix-community/emacs-overlay/archive/master.tar.gz;
+    }))
+  ];
 
   # Enable bluetooth
   hardware.bluetooth.enable = true;
   services.blueman.enable = true;
+  hardware.bluetooth.settings = {
+        General = {
+            ControllerMode = "bredr";
+        };
+  };
 
   # Bootloader.
   boot.loader.systemd-boot.enable = true;
@@ -80,9 +89,13 @@
   services.xserver.enable = true;
 
   # Setting the Desktop Environment.
-  services.xserver.displayManager.sddm.enable = true;
-  services.xserver.desktopManager.plasma5.enable = true;
-  services.xserver.windowManager.awesome = {
+  services.xserver.displayManager.sddm.enable = false;
+  services.xserver.displayManager.gdm.enable = true;
+
+  services.xserver.desktopManager.plasma5.enable = false;
+  services.xserver.desktopManager.gnome.enable = true;
+
+        services.xserver.windowManager.awesome = {
     enable = true;
     luaModules = with pkgs.luaPackages; [
       luarocks # is the package manager for Lua modules
@@ -98,22 +111,21 @@
 
   # Enable CUPS to print documents.
   #services.printing.enable = true;
+  # hardware.pulseaudio.enable = true;
+  # hardware.pulseaudio.support32Bit = true;    ## If compatibility with 32-bit applications is desired.
 
-  # Enable sound with pipewire.
-  # sound.enable = true;
+  # Not strictly required but pipewire will use rtkit if it is present
+  # security.rtkit.enable = true;
   hardware.pulseaudio.enable = false;
-  security.rtkit.enable = true;
   services.pipewire = {
-    enable = true;
-    alsa.enable = true;
-    alsa.support32Bit = true;
-    pulse.enable = true;
-    # If you want to use JACK applications, uncomment this
-    #jack.enable = true;
-
-    # use the example session manager (no others are packaged yet so this is enabled by default,
-    # no need to redefine it in your config for now)
-    #media-session.enable = true;
+        enable = true;
+        # Compatibility shims, adjust according to your needs
+        alsa = {
+       enable = true;
+      support32Bit = true;
+    };
+        pulse.enable = true;
+        jack.enable = true;
   };
 
   # Enable touchpad support (enabled default in most desktopManager).
@@ -123,7 +135,7 @@
   users.users.beethoven = {
     isNormalUser = true;
     description = "beethoven";
-    extraGroups = [ "networkmanager" "wheel" "docker"];
+    extraGroups = [ "networkmanager" "wheel" "docker" "beethoven" ];
     home = "/home/beethoven";
     packages = with pkgs; [
       vivaldi
@@ -132,24 +144,30 @@
 
       discord
       spotify
+      syncthing
       nitrogen
 
-      starship
+          # Open-source games
+      zeroad
+      xonotic
 
       dolphin
+          evince
       lxappearance
       numix-icon-theme
-      capitaine-cursors
+      gruvbox-dark-gtk # GTK theme
       adwaita-qt
-      pkgs.gnome.file-roller
+      gnome.file-roller
+
+      # GNOME Extensions
+      gnomeExtensions.dash-to-dock
 
       nodePackages.npm
       nodePackages.typescript-language-server
+      rust-analyzer
     ];
   };
 
-  # Allow unfree packages
-  nixpkgs.config.allowUnfree = true;
 
   # List packages installed in system profile. To search, run:
   # $ nix search wget
@@ -163,14 +181,19 @@
 
     alacritty
     unzip
+    xclip
+
+        gitui
+        git
     fish
 
     micro
     vim
     emacs
+    neovim
+    fzf
 
-    btop   # Cross-platform system monitors
-    bottom #
+    btop
 
     wget
     acpi
@@ -193,13 +216,14 @@
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
-  # programs.mtr.enable = true;
-  # programs.gnupg.agent = {
-  #   enable = true;
-  #   enableSSHSupport = true;
-  # };
+  programs.mtr.enable = true;
+  programs.gnupg.agent = {
+     enable = true;
+     enableSSHSupport = true;
+  };
 
-  # List services that you want to enable:
+  # Allow unfree packages
+  nixpkgs.config.allowUnfree = true;
 
   # Enable the OpenSSH daemon.
   services.openssh = {
