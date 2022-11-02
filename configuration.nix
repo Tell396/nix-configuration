@@ -2,17 +2,7 @@
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
-#with import <nixpkgs> {};
-
 { config, pkgs, ... }:
-
-# Listing current channels                                                      nix-channel --list
-# Adding a primary channel                                                      nix-channel --add https://nixos.org/channels/channel-name nixos
-# Adding other channels                                                         nix-channel --add https://some.channel/url my-alias
-# Remove a channel                                                              nix-channel --remove channel-alias
-# Updating a channel                                                            nix-channel --update channel-alias
-# Updating all channels                                                         nix-channel --update
-# Rollback the last update (useful if the last update breaks the nixos-rebuild) nix-channel --rollback
 
 {
   imports =
@@ -20,13 +10,21 @@
       ./hardware-configuration.nix
     ];
 
+  # Bootloader.
+  boot.loader.systemd-boot.enable = true;
+  boot.loader.efi.canTouchEfiVariables = true;
+  boot.loader.efi.efiSysMountPoint = "/boot/efi";
+
+  # Kernel
+  #boot.kernelPackages = pkgs.linuxPackages_latest-libre;
+
   # Enable docker
   virtualisation.docker.enable = true;
 
   # Enable flatpak
   services.flatpak.enable = true;
-  #xdg.portal.enable = true;
-  #xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
+  xdg.portal.enable = true;
+  xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
 
   # Enable virtualbox (virtualisation)
   virtualisation.virtualbox.host.enable = true;
@@ -35,67 +33,61 @@
   # Enable Emacs as daemon
   # services.emacs.enable = true;
 
-  nixpkgs.overlays = [
-    (import (builtins.fetchTarball {
-      url = https://github.com/nix-community/emacs-overlay/archive/master.tar.gz;
-    }))
-  ];
+  # nixpkgs.overlays = [
+  #   (import (builtins.fetchTarball {
+  #     url = https://github.com/nix-community/emacs-overlay/archive/master.tar.gz;
+  #   }))
+  # ];
 
   # Enable bluetooth
   hardware.bluetooth.enable = true;
   services.blueman.enable = true;
-  hardware.bluetooth.settings = {
-        General = {
-            ControllerMode = "bredr";
-        };
-  };
-
-  # Bootloader.
-  boot.loader.systemd-boot.enable = true;
-  boot.loader.efi.canTouchEfiVariables = true;
-  boot.loader.efi.efiSysMountPoint = "/boot/efi";
+  # hardware.bluetooth.settings = {
+  #       General = {
+  #           ControllerMode = "bredr";
+  #       };
+  # };
 
   networking.hostName = "nixos"; # Define your hostname.
-  #networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
-
-  # Enable networking
-  networking.networkmanager.enable = true;
+  # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
 
   # Configure network proxy if necessary
   # networking.proxy.default = "http://user:password@proxy:port/";
   # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
 
+  # Enable networking
+  networking.networkmanager.enable = true;
+
   # Set your time zone.
   time.timeZone = "Asia/Vladivostok";
 
   # Select internationalisation properties.
-  i18n.defaultLocale = "en_GB.utf8";
+  i18n.defaultLocale = "ru_RU.utf8";
 
-  i18n.extraLocaleSettings = {
-    LC_ADDRESS = "ru_RU.utf8";
-    LC_IDENTIFICATION = "ru_RU.utf8";
-    LC_MEASUREMENT = "ru_RU.utf8";
-    LC_MONETARY = "ru_RU.utf8";
-    LC_NAME = "ru_RU.utf8";
-    LC_NUMERIC = "ru_RU.utf8";
-    LC_PAPER = "ru_RU.utf8";
-    LC_TELEPHONE = "ru_RU.utf8";
-    LC_TIME = "ru_RU.utf8";
-  };
+  hardware.pulseaudio.enable = true;
+  hardware.pulseaudio.support32Bit = true;    ## If compatibility with 32-bit applications is desired.
 
-  nix.settings.experimental-features = "nix-command flakes";
+	# # rtkit is optional but recommended
+	# security.rtkit.enable = true;
+	# 	services.pipewire = {
+	# 	enable = true;
+	# 	alsa.enable = true;
+	# 	alsa.support32Bit = true;
+	# 	pulse.enable = true;
+	# 	# If you want to use JACK applications, uncomment this
+	# 	jack.enable = true;
+	# };
 
   # Enable the X11 windowing system.
   services.xserver.enable = true;
 
-  # Setting the Desktop Environment.
-  services.xserver.displayManager.sddm.enable = false;
+  # Enable the GNOME Desktop Environment.
   services.xserver.displayManager.gdm.enable = true;
-
+  services.xserver.desktopManager.gnome.enable = false;
   services.xserver.desktopManager.plasma5.enable = false;
-  services.xserver.desktopManager.gnome.enable = true;
 
-        services.xserver.windowManager.awesome = {
+   services.xserver.windowManager = {
+   awesome = {
     enable = true;
     luaModules = with pkgs.luaPackages; [
       luarocks # is the package manager for Lua modules
@@ -103,75 +95,69 @@
     ];
   };
 
+   exwm.enable = true;
+   xmonad.enable = true;
+};
   # Configure keymap in X11
   services.xserver = {
     layout = "us";
     xkbVariant = "";
   };
 
-  # Enable CUPS to print documents.
-  #services.printing.enable = true;
-  # hardware.pulseaudio.enable = true;
-  # hardware.pulseaudio.support32Bit = true;    ## If compatibility with 32-bit applications is desired.
-
-  # Not strictly required but pipewire will use rtkit if it is present
-  # security.rtkit.enable = true;
-  hardware.pulseaudio.enable = false;
-  services.pipewire = {
-        enable = true;
-        # Compatibility shims, adjust according to your needs
-        alsa = {
-       enable = true;
-      support32Bit = true;
-    };
-        pulse.enable = true;
-        jack.enable = true;
-  };
-
   # Enable touchpad support (enabled default in most desktopManager).
   services.xserver.libinput.enable = true;
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users.beethoven = {
+  users.users.sibelius = {
     isNormalUser = true;
-    description = "beethoven";
-    extraGroups = [ "networkmanager" "wheel" "docker" "beethoven" ];
+    description = "Jean Sibelius";
     home = "/home/beethoven";
+    extraGroups = [ "audio" "networkmanager" "wheel" ];
     packages = with pkgs; [
-      vivaldi
-      #chromium
+      #vivaldi
       ungoogled-chromium
 
+	    tdesktop
       discord
       spotify
       syncthing
-      nitrogen
+      vlc
 
-          # Open-source games
+      rofi
+      nitrogen
+      alacritty
+
+      # Open-source games/projects
       zeroad
       xonotic
+      stellarium
 
+      dbeaver
       dolphin
-          evince
+      evince
       lxappearance
       numix-icon-theme
-      gruvbox-dark-gtk # GTK theme
       adwaita-qt
       gnome.file-roller
 
       # GNOME Extensions
       gnomeExtensions.dash-to-dock
 
+      # Emacs optional dependences
+      nodejs
+      nodePackages.prettier
       nodePackages.npm
       nodePackages.typescript-language-server
       rust-analyzer
+
+      # Emacs packages
+      emacs28Packages.prettier-js
+      emacs28Packages.telega
     ];
   };
 
-
   # List packages installed in system profile. To search, run:
   # $ nix search wget
-
   environment.systemPackages = with pkgs; [
     xorg.xbacklight
 
@@ -179,18 +165,17 @@
     cargo
     go
 
-    alacritty
     unzip
     xclip
 
-        gitui
-        git
+    gitui
+    git
     fish
 
     micro
     vim
     emacs
-    neovim
+    tmux
     fzf
 
     btop
@@ -199,37 +184,48 @@
     acpi
     gzip
     pamixer
+    bluez-tools
+    blueman
+  ];
 
+  fonts.fonts = with pkgs; [
     noto-fonts
     noto-fonts-cjk
     noto-fonts-emoji
+    liberation_ttf
     fira-code
     fira-code-symbols
+    mplus-outline-fonts.githubRelease
+    dina-font
+    proggyfonts
+    
+    source-code-pro
   ];
-
-
-  services.postgresql = {
-     enable = true;
-     package = pkgs.postgresql_14;
-     #dataDir = "/share/postgresql";
-  };
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
-  programs.mtr.enable = true;
-  programs.gnupg.agent = {
-     enable = true;
-     enableSSHSupport = true;
-  };
+  # programs.mtr.enable = true;
+  # programs.gnupg.agent = {
+  #   enable = true;
+  #   enableSSHSupport = true;
+  # };
 
-  # Allow unfree packages
-  nixpkgs.config.allowUnfree = true;
+  # List services that you want to enable:
 
   # Enable the OpenSSH daemon.
   services.openssh = {
     enable = true;
     ports = [ 6566 ];
   };
+
+  services.postgresql = {
+     enable = true;
+     package = pkgs.postgresql_14;
+     #dataDir = "/share/postgresql";
+  };
+  
+  # Allow unfree packages
+  nixpkgs.config.allowUnfree = true;
 
   # Open ports in the firewall.
   # networking.firewall.allowedTCPPorts = [ ... ];
