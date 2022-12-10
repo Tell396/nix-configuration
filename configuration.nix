@@ -15,45 +15,33 @@
   boot.loader.efi.canTouchEfiVariables = true;
   boot.loader.efi.efiSysMountPoint = "/boot/efi";
 
-  # Kernel
-  #boot.kernelPackages = pkgs.linuxPackages_latest-libre;
+  networking.hostName = "nixos"; # Define your hostname.
+  #networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
 
-  # Enable docker
-  virtualisation.docker.enable = true;
+  # Configure network proxy if necessary
+  # networking.proxy.default = "http://user:password@proxy:port/";
+  # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
 
   # Enable flatpak
   services.flatpak.enable = true;
   xdg.portal.enable = true;
-  xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
+  # xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
 
   # Enable virtualbox (virtualisation)
   virtualisation.virtualbox.host.enable = true;
   virtualisation.virtualbox.host.enableExtensionPack = true;
 
-  # Enable Emacs as daemon
-  # services.emacs.enable = true;
-
-  # nixpkgs.overlays = [
-  #   (import (builtins.fetchTarball {
-  #     url = https://github.com/nix-community/emacs-overlay/archive/master.tar.gz;
-  #   }))
-  # ];
-
-  # Enable bluetooth
-  hardware.bluetooth.enable = true;
-  services.blueman.enable = true;
-  # hardware.bluetooth.settings = {
-  #       General = {
-  #           ControllerMode = "bredr";
-  #       };
-  # };
-
-  networking.hostName = "nixos"; # Define your hostname.
-  # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
-
-  # Configure network proxy if necessary
-  # networking.proxy.default = "http://user:password@proxy:port/";
-  # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
+  hardware.bluetooth = {
+     enable = true;
+   };
+   sound.enable = true;
+   # sound.mediaKeys.enable = true;
+   hardware.pulseaudio.enable = true;
+   hardware.pulseaudio.support32Bit = true;
+   # hardware.pulseaudio.package = pkgs.pulseaudioFull;
+   # hardware.pulseaudio.zeroconf.discovery.enable = true;
+   # hardware.pulseaudio.systemWide = true;
+   services.blueman.enable = true;
 
   # Enable networking
   networking.networkmanager.enable = true;
@@ -64,29 +52,18 @@
   # Select internationalisation properties.
   i18n.defaultLocale = "ru_RU.utf8";
 
-  hardware.pulseaudio.enable = true;
-  hardware.pulseaudio.support32Bit = true;    ## If compatibility with 32-bit applications is desired.
-
-	# # rtkit is optional but recommended
-	# security.rtkit.enable = true;
-	# 	services.pipewire = {
-	# 	enable = true;
-	# 	alsa.enable = true;
-	# 	alsa.support32Bit = true;
-	# 	pulse.enable = true;
-	# 	# If you want to use JACK applications, uncomment this
-	# 	jack.enable = true;
-	# };
-
   # Enable the X11 windowing system.
   services.xserver.enable = true;
 
-  # Enable the GNOME Desktop Environment.
-  services.xserver.displayManager.gdm.enable = true;
-  services.xserver.desktopManager.gnome.enable = false;
-  services.xserver.desktopManager.plasma5.enable = false;
+  # Enable the Cinnamon Desktop Environment.
+  services.xserver.displayManager.lightdm.enable = false;
+  services.xserver.desktopManager.cinnamon.enable = false;
 
-   services.xserver.windowManager = {
+  # Enable the GNOME Desktop Environment
+  services.xserver.displayManager.gdm.enable = true;
+  services.xserver.desktopManager.gnome.enable = true;
+  
+  services.xserver.windowManager = {
    awesome = {
     enable = true;
     luaModules = with pkgs.luaPackages; [
@@ -97,30 +74,54 @@
 
    exwm.enable = true;
    xmonad.enable = true;
-};
+ };
+
+
   # Configure keymap in X11
   services.xserver = {
     layout = "us";
     xkbVariant = "";
   };
 
+  # Enable CUPS to print documents.
+  services.printing.enable = true;
+
+  # Enable sound with pipewire.
+  # sound.enable = true;
+  # hardware.pulseaudio.enable = false;
+  # security.rtkit.enable = true;
+  # services.pipewire = {
+    # enable = true;
+    # alsa.enable = true;
+    # alsa.support32Bit = true;
+    # pulse.enable = true;
+    # # If you want to use JACK applications, uncomment this
+    # #jack.enable = true;
+ 
+    # # use the example session manager (no others are packaged yet so this is enabled by default,
+    # # no need to redefine it in your config for now)
+    # #media-session.enable = true;
+  # };
+
   # Enable touchpad support (enabled default in most desktopManager).
   services.xserver.libinput.enable = true;
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users.sibelius = {
+  users.users.bach = {
     isNormalUser = true;
-    description = "Jean Sibelius";
+    description = "Johann Sebastian Bach";
     home = "/home/beethoven";
-    extraGroups = [ "audio" "networkmanager" "wheel" ];
+    extraGroups = [ "audio" "sound" "pulse" "networkmanager" "wheel" ];
     packages = with pkgs; [
       #vivaldi
       ungoogled-chromium
+      firefox
 
-	    tdesktop
+	  tdesktop
       discord
       spotify
       syncthing
+      nextcloud-client
       vlc
 
       rofi
@@ -156,6 +157,11 @@
     ];
   };
 
+  # Allow unfree packages
+  nixpkgs.config.allowUnfree = true;
+
+  # List packages installed in system profile. To search, run:
+  # $ nix search wget
   # List packages installed in system profile. To search, run:
   # $ nix search wget
   environment.systemPackages = with pkgs; [
@@ -200,6 +206,9 @@
     proggyfonts
     
     source-code-pro
+    jetbrains-mono
+    hack-font
+	anonymousPro
   ];
 
   # Some programs need SUID wrappers, can be configured further or are
@@ -223,9 +232,6 @@
      package = pkgs.postgresql_14;
      #dataDir = "/share/postgresql";
   };
-  
-  # Allow unfree packages
-  nixpkgs.config.allowUnfree = true;
 
   # Open ports in the firewall.
   # networking.firewall.allowedTCPPorts = [ ... ];
@@ -239,6 +245,5 @@
   # this value at the release version of the first install of this system.
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  system.stateVersion = "22.05"; # Did you read the comment?
-
+  system.stateVersion = "unstable"; # Did you read the comment?
 }
